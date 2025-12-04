@@ -5,13 +5,12 @@ import * as THREE from 'three';
 import { BlockData, Gesture, HandData, ParticleData } from '../types';
 
 // --- Constants ---
-const BOUNDS = { x: 9, y: 6, z: 5 }; // Scene boundaries
+const BOUNDS = { x: 10, y: 7, z: 5 }; // Scene boundaries (slightly widened)
 const PHYSICS_OPTS = {
-    drag: 0.96,        // Air resistance
-    restitution: 0.7,  // Bounciness
+    drag: 0.98,        // Reduced drag slightly for more float
+    restitution: 0.6,  // Bounciness
     springStiffness: 0.15, // For hand grabbing
-    repulsion: 0.2,    // Force pushing blocks apart
-    radius: 0.8        // Approximate collision radius for blocks
+    radius: 0.75       // Approximate collision radius for blocks
 };
 
 // --- Utility Components ---
@@ -330,7 +329,7 @@ const SceneContent: React.FC<SceneContentProps> = ({ handData, blocks, setBlocks
                 // Simple Sphere Collision
                 const diff = new THREE.Vector3().subVectors(meshA.position, meshB.position);
                 const dist = diff.length();
-                const minDistance = PHYSICS_OPTS.radius * 2; // 2x radius
+                const minDistance = PHYSICS_OPTS.radius * 2; 
 
                 if (dist < minDistance) {
                     // Normalize collision normal
@@ -343,7 +342,6 @@ const SceneContent: React.FC<SceneContentProps> = ({ handData, blocks, setBlocks
                     meshB.position.sub(push);
 
                     // Velocity Reflection (Elastic)
-                    // V' = V - 2(V . N)N * restitution
                     // Relative velocity
                     const relVel = new THREE.Vector3().subVectors(physA.velocity, physB.velocity);
                     const velAlongNormal = relVel.dot(normal);
@@ -385,12 +383,13 @@ const SceneContent: React.FC<SceneContentProps> = ({ handData, blocks, setBlocks
                 // Regular air resistance
                 phys.velocity.multiplyScalar(PHYSICS_OPTS.drag);
                 phys.angularVelocity.multiplyScalar(0.98);
-            }
 
-            // Central Gravity / Centering force (keeps them from drifting too far forever)
-            if (!isGrabbing) {
-                const centerForce = mesh.position.clone().multiplyScalar(-0.005);
-                phys.velocity.add(centerForce);
+                // Gentle turbulence to keep them floating naturally
+                phys.velocity.add(new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.002,
+                    (Math.random() - 0.5) * 0.002,
+                    (Math.random() - 0.5) * 0.002
+                ));
             }
 
             // 2. Integration (Euler)
@@ -400,7 +399,7 @@ const SceneContent: React.FC<SceneContentProps> = ({ handData, blocks, setBlocks
             mesh.rotation.z += phys.angularVelocity.z;
 
             // 3. Boundary Checks
-            const buffer = 1.0; // Block size radius
+            const buffer = 1.0; 
             if (Math.abs(mesh.position.x) > BOUNDS.x - buffer) {
                 mesh.position.x = Math.sign(mesh.position.x) * (BOUNDS.x - buffer);
                 phys.velocity.x *= -PHYSICS_OPTS.restitution;
@@ -419,6 +418,9 @@ const SceneContent: React.FC<SceneContentProps> = ({ handData, blocks, setBlocks
 
     return (
         <>
+            <color attach="background" args={['#050510']} />
+            <fogExp2 attach="fog" args={['#050510', 0.02]} />
+            
             <ambientLight intensity={0.4} />
             <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
             <pointLight position={[-10, -10, -10]} intensity={0.5} color="purple" />
