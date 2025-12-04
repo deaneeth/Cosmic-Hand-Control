@@ -1,0 +1,7 @@
+{
+  "name": "Cosmic Hand Control",
+  "description": "A 3D interactive playground where you control floating iridescent blocks using hand gestures via your webcam.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
